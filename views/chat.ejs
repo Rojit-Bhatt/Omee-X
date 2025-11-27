@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #videos {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+            position: relative;
+        }
+
+        .video-player {
+            background-color: black;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Changed from cover to contain to show full video */
+            object-position: center;
+        }
+
+        /* Ensure videos maintain aspect ratio */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000;
+        }
+
+        #remoteVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #localVideo {
+            position: absolute;
+            z-index: 2;
+            border-radius: 10px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            object-fit: cover; /* Local video can be cropped to fit the small frame */
+        }
+
+        .smallFrame {
+            /* Mobile-first approach */
+            bottom: 120px;
+            right: 15px;
+            height: 150px;
+            width: 110px;
+        }
+
+        /* Tablet styles */
+        @media screen and (min-width: 601px) and (max-width: 1024px) {
+            .smallFrame {
+                height: 200px;
+                width: 150px;
+                bottom: 120px;
+                right: 20px;
+            }
+            
+            .control-container {
+                height: 70px;
+                width: 70px;
+            }
+        }
+
+        /* Desktop styles */
+        @media screen and (min-width: 1025px) {
+            .smallFrame {
+                height: 240px;
+                width: 180px;
+                bottom: 120px;
+                right: 30px;
+            }
+            
+            .control-container {
+                height: 70px;
+                width: 70px;
+            }
+        }
+
+        /* Landscape mode adjustments */
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            .smallFrame {
+                height: 120px;
+                width: 90px;
+                bottom: 80px;
+                right: 10px;
+            }
+            
+            #controls {
+                bottom: 10px;
+                gap: 0.5em;
+            }
+            
+            .control-container {
+                height: 50px;
+                width: 50px;
+            }
+        }
+
+        /* Ultra-wide desktop screens */
+        @media screen and (min-width: 1440px) {
+            .smallFrame {
+                height: 280px;
+                width: 210px;
+                bottom: 140px;
+                right: 40px;
+            }
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1em;
+            z-index: 3;
+        }
+
+        .control-container {
+            background-color: #ffffff;
+            height: 60px;
+            width: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .control-container:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .control-container svg {
+            height: 24px;
+            width: 24px;
+        }
+
+        #leave-btn {
+            background-color: rgb(255, 80, 80, 1);
+        }
+
+        #leave-btn:hover {
+            background-color: rgb(255, 60, 60, 1);
+        }
+
+        /* Mobile styles (up to 600px) */
+        @media screen and (max-width: 600px) {
+            .smallFrame {
+                height: 120px;
+                width: 90px;
+                bottom: 100px;
+                right: 10px;
+            }
+
+            .control-container {
+                height: 50px;
+                width: 50px;
+            }
+            
+            .control-container svg {
+                height: 20px;
+                width: 20px;
+            }
+            
+            #controls {
+                bottom: 15px;
+                gap: 0.8em;
+            }
+        }
+    </style>
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+
+<body class="flex flex-col h-dvh bg-gray-200">
+    <%- include('partials/header') %>
+        <div class="fixed videoblock hidden z-[222] w-full h-svh">
+            <div id="videos">
+                <div class="video-container">
+                    <video class="video-player" id="remoteVideo" autoplay playsinline></video>
+                    <video class="video-player" id="localVideo" autoplay muted playsinline></video>
+                </div>
+            </div>
+            <div id="controls">
+                <!-- <div class="control-container" id="cameraButton">
+                    <svg width="21" height="14" viewBox="0 0 21 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M20.525 2.149C20.365 2.05 20.183 2 20 2C19.847 2 19.694 2.035 19.553 2.105L17 3.382V3C17 1.346 15.654 0 14 0H3C1.346 0 0 1.346 0 3V11C0 12.654 1.346 14 3 14H14C15.654 14 17 12.654 17 11V10.618L19.553 11.894C19.694 11.965 19.847 12 20 12C20.183 12 20.365 11.95 20.525 11.851C20.82 11.668 21 11.347 21 11V3C21 2.653 20.82 2.332 20.525 2.149ZM5 8.5C4.171 8.5 3.5 7.829 3.5 7C3.5 6.171 4.171 5.5 5 5.5C5.829 5.5 6.5 6.171 6.5 7C6.5 7.829 5.829 8.5 5 8.5Z"
+                            fill="white" />
+                    </svg>
+                </div> -->
+                <div class="control-container" id="toggleCamera">
+                    <svg id='Camera_Settings_Flip_24' width='24' height='24' viewBox='0 0 24 24'
+                        xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>
+                        <rect width='24' height='24' stroke='none' fill='#000000' opacity='0' />
+
+
+                        <g transform="matrix(0.83 0 0 0.83 12 12)">
+                            <g style="">
+                                <g transform="matrix(1 0 0 1 5.25 0.31)">
+                                    <path
+                                        style="stroke: rgb(0,48,62); stroke-width: 1; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+                                        transform=" translate(-17.25, -12.31)"
+                                        d="M 15.552 2.119 C 20.35463882213237 3.845382784613891 23.22043450652252 8.775047413523508 22.344203830616053 13.802766277726708 C 21.467973154709586 18.830485141929906 17.103502441594543 22.50005918431589 12.000000000000004 22.5"
+                                        stroke-linecap="round" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 5.54 -8.55)">
+                                    <polyline
+                                        style="stroke: rgb(0,48,62); stroke-width: 1; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+                                        points="-0.01,2.03 -1.98,-1.33 1.98,-2.03 " />
+                                </g>
+                                <g transform="matrix(1 0 0 1 -5.25 -0.31)">
+                                    <path
+                                        style="stroke: rgb(0,48,62); stroke-width: 1; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+                                        transform=" translate(-6.75, -11.69)"
+                                        d="M 8.448 21.881 C 3.645361177867631 20.154617215386107 0.7795654934774783 15.22495258647648 1.6557961693839491 10.197233722273282 C 2.53202684529042 5.169514858070084 6.896497558405459 1.4999408156841056 11.999999999999998 1.5"
+                                        stroke-linecap="round" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 -5.54 8.55)">
+                                    <polyline
+                                        style="stroke: rgb(0,48,62); stroke-width: 1; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+                                        points="0.01,-2.03 1.99,1.34 -1.99,2.03 " />
+                                </g>
+                                <g transform="matrix(1 0 0 1 0.5 0)">
+                                    <path
+                                        style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(159,234,255); fill-rule: nonzero; opacity: 1;"
+                                        transform=" translate(-12.5, -12)"
+                                        d="M 18.5 15.5 C 18.5 16.052284749830793 18.052284749830793 16.5 17.5 16.5 L 7.5 16.5 C 6.947715250169207 16.5 6.5 16.052284749830793 6.5 15.5 L 6.5 9.5 C 6.5 8.947715250169207 6.947715250169207 8.5 7.5 8.5 L 10 8.5 L 10.223 8.053 C 10.392263542687765 7.714270588465138 10.738334289603905 7.500202218169136 11.117 7.500000000000001 L 13.881 7.500000000000001 C 14.259665710396096 7.500202218169136 14.605736457312236 7.714270588465138 14.775 8.053 L 15 8.5 L 17.5 8.5 C 18.052284749830793 8.5 18.5 8.947715250169207 18.5 9.5 Z"
+                                        stroke-linecap="round" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 0.5 0.5)">
+                                    <circle
+                                        style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(159,234,255); fill-rule: nonzero; opacity: 1;"
+                                        cx="0" cy="0" r="2" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 0.5 -2.5)">
+                                    <path
+                                        style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(159,234,255); fill-rule: nonzero; opacity: 1;"
+                                        transform=" translate(-12.5, -9.5)"
+                                        d="M 17.5 8.5 L 15 8.5 L 14.775 8.053 C 14.605736457312235 7.714270588465138 14.259665710396096 7.500202218169136 13.881 7.500000000000001 L 11.117 7.500000000000001 C 10.738334289603905 7.500202218169136 10.392263542687765 7.714270588465138 10.223 8.053 L 10 8.5 L 7.5 8.5 C 6.947715250169207 8.5 6.5 8.947715250169207 6.5 9.5 L 6.5 11.5 C 6.5 10.947715250169207 6.947715250169207 10.5 7.5 10.5 L 10 10.5 L 10.223 10.053 C 10.392263542687765 9.714270588465137 10.738334289603905 9.500202218169136 11.117 9.5 L 13.881 9.5 C 14.259665710396096 9.500202218169136 14.605736457312235 9.714270588465137 14.775 10.053 L 15 10.5 L 17.5 10.5 C 18.052284749830793 10.5 18.5 10.947715250169207 18.5 11.5 L 18.5 9.5 C 18.5 8.947715250169207 18.052284749830793 8.5 17.5 8.5 Z"
+                                        stroke-linecap="round" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 0.5 0)">
+                                    <path
+                                        style="stroke: rgb(0,48,62); stroke-width: 1; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+                                        transform=" translate(-12.5, -12)"
+                                        d="M 18.5 15.5 C 18.5 16.052284749830793 18.052284749830793 16.5 17.5 16.5 L 7.5 16.5 C 6.947715250169207 16.5 6.5 16.052284749830793 6.5 15.5 L 6.5 9.5 C 6.5 8.947715250169207 6.947715250169207 8.5 7.5 8.5 L 10 8.5 L 10.223 8.053 C 10.392263542687765 7.714270588465138 10.738334289603905 7.500202218169136 11.117 7.500000000000001 L 13.881 7.500000000000001 C 14.259665710396096 7.500202218169136 14.605736457312236 7.714270588465138 14.775 8.053 L 15 8.5 L 17.5 8.5 C 18.052284749830793 8.5 18.5 8.947715250169207 18.5 9.5 Z"
+                                        stroke-linecap="round" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 0.22 0.22)">
+                                    <path
+                                        style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(223,249,255); fill-rule: nonzero; opacity: 1;"
+                                        transform=" translate(-12.22, -12.22)"
+                                        d="M 11.086 13.914 C 10.328055580983824 13.129242226071376 10.33889525220584 11.881830445957787 11.110362849081813 11.110362849081813 C 11.881830445957785 10.33889525220584 13.129242226071376 10.328055580983824 13.914 11.086 Z"
+                                        stroke-linecap="round" />
+                                </g>
+                                <g transform="matrix(1 0 0 1 0.5 0.5)">
+                                    <circle
+                                        style="stroke: rgb(0,48,62); stroke-width: 1; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: nonzero; opacity: 1;"
+                                        cx="0" cy="0" r="2" />
+                                </g>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="control-container" id="hangup">
+                    <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 122.88 122.88">
+                        <defs>
+                            <style>
+                                .cls-1 {
+                                    fill: #ff3b30;
+                                    fill-rule: evenodd;
+                                }
+                            </style>
+                        </defs>
+                        <title>end-call</title>
+                        <path class="cls-1"
+                            d="M104.89,104.89a61.47,61.47,0,1,1,18-43.45,61.21,61.21,0,0,1-18,43.45ZM74.59,55.72a49.79,49.79,0,0,0-12.38-2.07A41.52,41.52,0,0,0,48,55.8a1.16,1.16,0,0,0-.74.67,4.53,4.53,0,0,0-.27,1.7,16.14,16.14,0,0,0,.2,2c.42,3,.93,6.8-2.42,8l-.22.07-12,3.24-.12,0A4.85,4.85,0,0,1,28,70a11.44,11.44,0,0,1-2.68-4.92,11,11,0,0,1,.42-6.93A23.69,23.69,0,0,1,29,52.39,21.52,21.52,0,0,1,36.55,46a42.74,42.74,0,0,1,10.33-3.6l.29-.07C49,42,51,41.48,53.08,41.17a62.76,62.76,0,0,1,25.14,1.59c6.87,2,13,5.43,16.8,10.7a13.88,13.88,0,0,1,2.92,9.59,12.64,12.64,0,0,1-4.88,8.43,1.34,1.34,0,0,1-1.26.28L78.6,68.38A3.69,3.69,0,0,1,75.41,66a7.73,7.73,0,0,1-.22-4,15.21,15.21,0,0,1,.22-1.6c.3-1.89.63-4.06-.89-4.72Z" />
+                    </svg>
+                </div>
+
+                <!-- <div class="control-container" id="micButton">
+                    <svg width="20" height="20" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M7 12.5C8.7 12.5 10 11.2 10 9.5V3.5C10 1.8 8.7 0.5 7 0.5C5.3 0.5 4 1.8 4 3.5V9.5C4 11.2 5.3 12.5 7 12.5ZM12.3 9.5C12.3 12.5 9.8 14.6 7 14.6C4.2 14.6 1.7 12.5 1.7 9.5H0C0 12.9 2.7 15.7 6 16.2V19.5H8V16.2C11.3 15.7 14 12.9 14 9.5H12.3Z"
+                            fill="white" />
+                    </svg>
+                </div> -->
+            </div>
+        </div>
+        <div id="incoming-call"
+            class="fixed hidden z-[222] w-full h-dvh bg-gray-900 bg-opacity-75">
+            <div class="flex items-center justify-center h-full">
+                <div class="bg-white p-8 rounded-md text-center">
+                    <p class="mb-4">Incoming Call...</p>
+                    <button id="accept-call" class="bg-green-500 text-white py-2 px-4 rounded-md">Accept</button>
+                    <button id="reject-call" class="bg-red-500 text-white py-2 px-4 rounded-md ml-2">Reject</button>
+                </div>
+            </div>
+        </div>
+        <main class="flex-1 p-4 overflow-y-auto relative" id="message-container">
+            <div
+                class="text-black-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2/3 text-center nobody">
+                No one is available at the moment. ⏳
+
+                Please wait while we connect you with a partner. 🚀 For the best video call experience, we recommend using mobile data. 📱
+                
+                You will be connected shortly. 👋👋👋👋
+            </div>
+        </main>
+        <form id="chatform" class="bg-white p-4 hidden">
+            <input type="hidden" id="userid" value="">
+            <div class="flex">
+                <input type="text" id="messagebox"
+                    class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Type a message">
+                <button type="submit"
+                    class="ml-2 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Send</button>
+            </div>
+        </form>
+        <video id="local-video" class="hidden" autoplay></video>
+        <video id="remote-video" class="hidden" autoplay></video>
+
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+            integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+            crossorigin="anonymous"></script>
+
+        <script>
+            const socket = io();
+            const chatform = document.querySelector("#chatform");
+            const messagebox = document.querySelector("#messagebox");
+            const messagecontainer = document.querySelector("#message-container");
+
+            let room;
+
+            socket.emit("joinroom", { room: "<%= fullname %>" });
+
+            socket.on("joined", function (data) {
+                room = data;
+                document.querySelector(".nobody").classList.add("hidden");
+                document.querySelector(".information").textContent = "Connected to  " + room;
+                document.querySelector(".videocall").classList.remove("hidden");
+                document.querySelector("#chatform").classList.remove("hidden");
+            });
+            socket.on("userDisconnected", function (data) {
+                if (data.userId !== socket.id) {
+                    // Reset video call button if user was in calling state
+                    resetVideoCallButton();
+                    
+                    // Hide chat form when user disconnects
+                    document.querySelector("#chatform").classList.add("hidden");
+                    
+                    alert("The other user has disconnected. We will connect you to a new user.");
+                    setTimeout(function () {
+                        location.reload(); // Refresh the page
+                    }, 2000); // 2 seconds delay
+                }
+            });
+
+
+            window.addEventListener('beforeunload', function () {
+                socket.emit('disconnecting'); // Notify server before unloading the page
+            });
+
+
+
+            socket.on("message", function (message) {
+                receiveMessage(message);
+            })
+
+            chatform.addEventListener("submit", function (event) {
+                event.preventDefault();
+                
+                // Trim whitespace and check if message is not empty
+                const message = messagebox.value.trim();
+                if (message === "") {
+                    return; // Don't send empty messages
+                }
+                
+                socket.emit("message", { room: room, message: message });
+                attachMessage(message);
+                messagebox.value = "";
+            })
+
+            function attachMessage(message) {
+                const userMessageContainer = document.createElement('div');
+                userMessageContainer.classList.add('flex', 'my-2', 'justify-end');
+
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.classList.add('bg-blue-500', 'text-white', 'p-3', 'rounded-lg', 'max-w-xs');
+
+                const userMessageText = document.createElement('p');
+                userMessageText.textContent = message;
+
+                userMessageDiv.appendChild(userMessageText);
+
+                userMessageContainer.appendChild(userMessageDiv);
+
+                document.getElementById('message-container').appendChild(userMessageContainer);
+
+                document.querySelector("#message-container").scrollTop = document.querySelector("#message-container").scrollHeight;
+            }
+
+            function receiveMessage(message) {
+                const messageContainer = document.createElement('div');
+                messageContainer.classList.add('flex', 'my-2', 'justify-start');
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('bg-gray-300', 'text-gray-800', 'p-3', 'rounded-lg', 'max-w-xs');
+
+                const messageText = document.createElement('p');
+                messageText.textContent = message;
+
+                messageDiv.appendChild(messageText);
+
+                messageContainer.appendChild(messageDiv);
+
+                document.getElementById('message-container').appendChild(messageContainer);
+                document.querySelector("#message-container").scrollTop = document.querySelector("#message-container").scrollHeight;
+            }
+
+            let localStream;
+            let remoteStream;
+            let peerConnection;
+            let inCall = false;
+            let isInitiator = false; // Track who initiated the call
+
+const rtcSettings = {
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+            urls: "turn:relay1.expressturn.com:3478",
+            username: "efRYECZTLRWUNV9J3S",
+            credential: "Q5NF8ipsQ6jTkkGj"
+        },
+    ]
+};
+
+const initialize = async (initiator = false) => {
+    if (!socket.hasListeners('signalingMessage')) {
+        socket.on("signalingMessage", handleSignalingMessage);
+    }
+    
+    isInitiator = initiator;
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        });
+        document.querySelector("#localVideo").srcObject = localStream;
+        document.querySelector("#localVideo").style.display = "block";
+        
+        // Set up initial video layout
+        setTimeout(() => handleVideoLayout(), 100); // Small delay to ensure video is ready
+
+        // Only initiator creates offer
+        if (isInitiator) {
+            await createPeerConnection();
+            initiateOffer();
+        }
+
+        inCall = true;
+    } catch (err) {
+        console.error("Error getting user media: ", err);
+    }
+}
+
+// Function to handle video aspect ratios and responsiveness
+const handleVideoLayout = () => {
+    const remoteVideo = document.querySelector("#remoteVideo");
+    const localVideo = document.querySelector("#localVideo");
+    
+    if (remoteVideo && localVideo) {
+        // Add event listeners for when video metadata is loaded
+        remoteVideo.addEventListener('loadedmetadata', () => {
+            adjustVideoLayout(remoteVideo, localVideo);
+        });
+        
+        localVideo.addEventListener('loadedmetadata', () => {
+            adjustVideoLayout(remoteVideo, localVideo);
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            adjustVideoLayout(remoteVideo, localVideo);
+        });
+    }
+};
+
+const adjustVideoLayout = (remoteVideo, localVideo) => {
+    const container = document.querySelector('#videos');
+    if (!container || !remoteVideo || !localVideo) return;
+    
+    const containerAspectRatio = container.clientWidth / container.clientHeight;
+    const remoteVideoAspectRatio = remoteVideo.videoWidth / remoteVideo.videoHeight;
+    
+    // Adjust remote video to fit container while maintaining aspect ratio
+    if (remoteVideoAspectRatio && !isNaN(remoteVideoAspectRatio)) {
+        if (remoteVideoAspectRatio > containerAspectRatio) {
+            // Video is wider than container
+            remoteVideo.style.width = '100%';
+            remoteVideo.style.height = 'auto';
+        } else {
+            // Video is taller than container
+            remoteVideo.style.width = 'auto';
+            remoteVideo.style.height = '100%';
+        }
+        remoteVideo.style.objectFit = 'contain';
+        remoteVideo.style.objectPosition = 'center';
+    }
+    
+    // Position local video appropriately based on screen size
+    const isMobile = window.innerWidth <= 600;
+    const isTablet = window.innerWidth > 600 && window.innerWidth <= 1024;
+    
+    if (isMobile) {
+        localVideo.classList.add('smallFrame');
+        localVideo.style.bottom = '100px';
+        localVideo.style.right = '10px';
+        localVideo.style.width = '90px';
+        localVideo.style.height = '120px';
+    } else if (isTablet) {
+        localVideo.classList.add('smallFrame');
+        localVideo.style.bottom = '120px';
+        localVideo.style.right = '20px';
+        localVideo.style.width = '150px';
+        localVideo.style.height = '200px';
+    } else {
+        localVideo.classList.add('smallFrame');
+        localVideo.style.bottom = '120px';
+        localVideo.style.right = '30px';
+        localVideo.style.width = '180px';
+        localVideo.style.height = '240px';
+    }
+};
+
+const initiateOffer = async () => {
+    if (!peerConnection) {
+        console.error("Peer connection not initialized");
+        return;
+    }
+    
+    if (peerConnection.signalingState !== 'stable') {
+        console.log("Peer connection not in stable state, current state:", peerConnection.signalingState);
+        return;
+    }
+
+    try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        console.log("Sending offer: ", offer);
+        socket.emit("signalingMessage", {
+            room,
+            message: JSON.stringify({
+                type: "offer",
+                offer
+            })
+        });
+    } catch (err) {
+        console.error("Error creating offer: ", err);
+    }
+}
+
+const createPeerConnection = () => {
+    if (peerConnection) {
+        console.log("Peer connection already exists");
+        return;
+    }
+
+    peerConnection = new RTCPeerConnection(rtcSettings);
+
+    remoteStream = new MediaStream();
+
+    document.querySelector("#remoteVideo").srcObject = remoteStream;
+    document.querySelector("#remoteVideo").style.display = "block";
+    document.querySelector("#localVideo").classList.add("smallFrame");
+    
+    // Set up video layout handling
+    handleVideoLayout();
+
+    if (localStream) {
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+    }
+
+    peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach(track => {
+            remoteStream.addTrack(track);
+        });
+    };
+
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            console.log("Sending ICE candidate: ", event.candidate);
+            socket.emit("signalingMessage", {
+                room,
+                message: JSON.stringify({
+                    type: "candidate",
+                    candidate: event.candidate
+                })
+            });
+        }
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+        console.log("Connection state changed: ", peerConnection.connectionState);
+        
+        if (peerConnection.connectionState === 'failed') {
+            console.log("Connection failed, attempting to restart ICE");
+            peerConnection.restartIce();
+        }
+    };
+
+    peerConnection.onicegatheringstatechange = () => {
+        console.log("ICE gathering state: ", peerConnection.iceGatheringState);
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+        console.log("ICE connection state: ", peerConnection.iceConnectionState);
+    };
+}
+
+const handleSignalingMessage = async (message) => {
+    const { type, offer, answer, candidate } = JSON.parse(message);
+    console.log("Received signaling message: ", message);
+    
+    try {
+        if (type === "offer") {
+            await handleOffer(offer);
+        } else if (type === "answer") {
+            await handleAnswer(answer);
+        } else if (type === "candidate" && peerConnection) {
+            if (peerConnection.remoteDescription) {
+                await peerConnection.addIceCandidate(candidate);
+            } else {
+                // Store candidates if remote description isn't set yet
+                if (!window.pendingCandidates) window.pendingCandidates = [];
+                window.pendingCandidates.push(candidate);
+            }
+        } else if (type === "hangup") {
+            hangup();
+        }
+    } catch (error) {
+        console.error("Error handling signaling message: ", error);
+    }
+}
+
+const handleOffer = async (offer) => {
+    console.log("Handling offer, current signaling state:", peerConnection?.signalingState);
+    
+    // Create peer connection if it doesn't exist
+    if (!peerConnection) {
+        await createPeerConnection();
+    }
+    
+    // Check if we're in the right state to handle an offer
+    if (peerConnection.signalingState !== 'stable' && peerConnection.signalingState !== 'have-local-offer') {
+        console.log("Cannot handle offer in current state:", peerConnection.signalingState);
+        return;
+    }
+    
+    try {
+        await peerConnection.setRemoteDescription(offer);
+        console.log("Remote description set successfully");
+        
+        // Process any pending candidates
+        if (window.pendingCandidates && window.pendingCandidates.length > 0) {
+            for (const candidate of window.pendingCandidates) {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (err) {
+                    console.error("Error adding pending candidate:", err);
+                }
+            }
+            window.pendingCandidates = [];
+        }
+        
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        console.log("Sending answer: ", answer);
+        socket.emit("signalingMessage", { room, message: JSON.stringify({ type: "answer", answer }) });
+        inCall = true;
+    } catch (error) {
+        console.error("Error handling offer: ", error);
+        // If we get an InvalidStateError, try to reset the connection
+        if (error.name === 'InvalidStateError') {
+            console.log("Resetting peer connection due to invalid state");
+            resetPeerConnection();
+        }
+    }
+}
+
+const handleAnswer = async (answer) => {
+    if (!peerConnection) {
+        console.error("No peer connection to handle answer");
+        return;
+    }
+    
+    if (peerConnection.signalingState !== 'have-local-offer') {
+        console.log("Cannot handle answer in current state:", peerConnection.signalingState);
+        return;
+    }
+    
+    try {
+        await peerConnection.setRemoteDescription(answer);
+        console.log("Remote description set: ", answer);
+        
+        // Process any pending candidates
+        if (window.pendingCandidates && window.pendingCandidates.length > 0) {
+            for (const candidate of window.pendingCandidates) {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (err) {
+                    console.error("Error adding pending candidate:", err);
+                }
+            }
+            window.pendingCandidates = [];
+        }
+    } catch (error) {
+        console.error("Error handling answer: ", error);
+        if (error.name === 'InvalidStateError') {
+            console.log("Resetting peer connection due to invalid state");
+            resetPeerConnection();
+        }
+    }
+}
+
+const resetPeerConnection = () => {
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+    window.pendingCandidates = [];
+    inCall = false;
+}
+
+document.querySelector("#video-call-btn")
+    .addEventListener("click", function () {
+        const videoCallBtn = document.querySelector("#video-call-btn");
+        const chatForm = document.querySelector("#chatform");
+        
+        // Change button state to calling
+        videoCallBtn.textContent = "Calling...";
+        videoCallBtn.disabled = true;
+        videoCallBtn.classList.add("opacity-50", "cursor-not-allowed");
+        videoCallBtn.classList.remove("hover:bg-blue-600");
+        
+        // Hide chat input box
+        chatForm.classList.add("hidden");
+        
+        socket.emit("startVideoCall", { room });
+    });
+
+socket.on("incomingCall", function () {
+    console.log("Incoming call");
+    document.querySelector("#incoming-call").classList.remove("hidden");
+});
+
+socket.on("callAccepted", function () {
+    const chatForm = document.querySelector("#chatform");
+    chatForm.classList.add("hidden"); // Hide input during call
+    
+    initialize(true); // Caller becomes initiator
+    document.querySelector(".videoblock").classList.remove("hidden");
+});
+
+document.querySelector("#accept-call")
+    .addEventListener("click", function () {
+        const chatForm = document.querySelector("#chatform");
+        
+        document.querySelector("#incoming-call").classList.add("hidden");
+        chatForm.classList.add("hidden"); // Hide input during call
+        
+        initialize(false); // Callee is not initiator
+        document.querySelector(".videoblock").classList.remove("hidden");
+        socket.emit("acceptCall", { room });
+    });
+
+document.querySelector("#reject-call")
+    .addEventListener("click", function () {
+        document.querySelector("#incoming-call").classList.add("hidden");
+        socket.emit("rejectCall", { room });
+    });
+
+socket.on("callRejected", function () {
+    alert("Call rejected by other user");
+    resetVideoCallButton();
+});
+
+function resetVideoCallButton() {
+    const videoCallBtn = document.querySelector("#video-call-btn");
+    const chatForm = document.querySelector("#chatform");
+    
+    // Reset button state
+    videoCallBtn.textContent = "Video Call";
+    videoCallBtn.disabled = false;
+    videoCallBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    videoCallBtn.classList.add("hover:bg-blue-600");
+    
+    // Only show chat input box if connected to someone
+    if (room) {
+        chatForm.classList.remove("hidden");
+    }
+}
+
+document.querySelector("#hangup")
+    .addEventListener("click", function () {
+        hangup();
+    });
+
+function hangup() {
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+    
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+
+    document.querySelector(".videoblock").classList.add("hidden");
+    document.querySelector("#localVideo").classList.remove("smallFrame");
+    
+    // Clear pending candidates
+    window.pendingCandidates = [];
+    
+    if (inCall) {
+        socket.emit("signalingMessage", { room, message: JSON.stringify({ type: "hangup" }) });
+    }
+    
+    // Reset video call button and show chat input
+    resetVideoCallButton();
+    
+    inCall = false;
+    isInitiator = false;
+}
+
+let isFrontCamera = true;
+let audioTrack;
+
+document.querySelector("#toggleCamera").addEventListener("click", async function () {
+    isFrontCamera = !isFrontCamera;
+    await switchCamera();
+});
+
+async function switchCamera() {
+    if (!localStream) {
+        console.error("No local stream available");
+        return;
+    }
+
+    const videoConstraints = {
+        audio: true,
+        video: {
+            facingMode: isFrontCamera ? 'user' : 'environment'
+        }
+    };
+
+    try {
+        // Stop current video track
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            videoTrack.stop();
+        }
+
+        // Get new stream with switched camera
+        const newStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        const audioTrack = localStream.getAudioTracks()[0];
+
+        // Create new stream with new video track and existing audio
+        if (audioTrack) {
+            localStream = new MediaStream([newVideoTrack, audioTrack]);
+        } else {
+            localStream = newStream;
+        }
+
+        document.querySelector("#localVideo").srcObject = localStream;
+
+        // Update the peer connection with new video track
+        if (inCall && peerConnection) {
+            const sender = peerConnection.getSenders().find(s => 
+                s.track && s.track.kind === 'video'
+            );
+            if (sender) {
+                await sender.replaceTrack(newVideoTrack);
+            }
+        }
+    } catch (err) {
+        console.error("Error switching camera: ", err);
+    }
+}
+
+
+
+
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UU-Megle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Full-page notice -->
+    <div id="notice" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-lg text-center shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Important Notice</h2>
+            <p class="mb-6 text-gray-700">
+                Since our hostel net does not offer smooth peer-to-peer connection, for video chat to work smoothly, please use mobile data.
+            </p>
+            <button onclick="closeNotice()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-gray-200 py-4">
+        <div class="container mx-auto flex justify-between items-center px-4 md:px-6">
+            <div class="flex items-center space-x-4">
+                <!-- Logo can be added here if needed -->
+                <div class="ad w-full">
+                    <marquee behavior="scroll" direction="left" scrollamount="20" class="text-xl font-mono">
+                        For Advertisement mail us at rojitbhatt165@gmail.com
+                    </marquee>
+                </div>
+            </div>
+            <div class="space-x-4 hidden md:flex">
+                <a href="https://www.instagram.com/rojit_bhatt/" target="_blank"
+                   class="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition">
+                   Contact Me
+                </a>
+                <a href="/login"
+                   class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                   Login
+                </a>
+                <a href="/signup"
+                   class="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition">
+                   Signup
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1">
+        <section class="bg-gradient-to-r from-blue-500 to-blue-300 text-white py-12 md:py-24 lg:py-32">
+            <div class="container mx-auto px-4 md:px-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <h1 class="text-4xl font-bold leading-tight md:text-5xl">
+                            Welcome to <br>
+                            <span class="text-blue-100">UU-megle - Connecting UU Students</span>
+                        </h1>
+                        <p class="text-lg md:text-xl max-w-lg">
+                            UU-megle is a video and chat platform exclusively for Uttaranchal University students, enabling
+                            seamless communication and collaboration.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="/login">
+                                <button class="bg-blue-600 text-white px-8 py-2 rounded-md shadow hover:bg-blue-700 transition">
+                                    Login
+                                </button>
+                            </a>
+                            <a href="/signup">
+                                <button class="bg-gray-800 text-white px-8 py-2 rounded-md shadow hover:bg-gray-700 transition">
+                                    Signup
+                                </button>
+                            </a>
+                        </div>
+                    </div>
+                    <img src="https://images.unsplash.com/photo-1604881989793-466aca8dd319?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                         alt="Hero Image" class="rounded-xl shadow-lg object-cover w-full h-72 md:h-96">
+                </div>
+            </div>
+        </section>
+
+        <div class="bg-gray-200 py-4">
+            <marquee behavior="scroll" direction="left" scrollamount="20" class="text-xl font-mono">
+                For Advertisement mail us at rojitbhatt165@gmail.com
+            </marquee>
+        </div>
+
+        <section class="py-12 bg-white">
+            <div class="container mx-auto px-4 md:px-6">
+                <div class="text-center">
+                    <div class="inline-block bg-gray-200 text-gray-700 px-4 py-1 rounded-lg text-sm">
+                        University Ads
+                    </div>
+                    <h2 class="text-3xl font-bold mt-4 mb-6">Discover Campus Opportunities</h2>
+                    <p class="text-lg max-w-3xl mx-auto">
+                        Stay up-to-date with the latest events, activities, and opportunities happening around the
+                        campus.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                    <div class="bg-gray-100 rounded-lg p-4 shadow-lg">
+                        <img src="https://ih1.redbubble.net/image.4326721277.0235/pp,840x830-pad,1000x1000,f8f8f8.u1.jpg"
+                             alt="Hackathon" class="w-full h-32 object-cover rounded-md mb-4">
+                        <h3 class="text-lg font-bold">Hackathon: Innovate for the Future</h3>
+                        <p class="text-gray-600">
+                            Join our 24-hour hackathon and showcase your coding skills. Attractive prizes await the winners.
+                        </p>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 shadow-lg">
+                        <img src="https://ih1.redbubble.net/image.4326721277.0235/pp,840x830-pad,1000x1000,f8f8f8.u1.jpg"
+                             alt="Workshop" class="w-full h-32 object-cover rounded-md mb-4">
+                        <h3 class="text-lg font-bold">Entrepreneurship Workshop</h3>
+                        <p class="text-gray-600">
+                            Learn the fundamentals of starting a successful business from industry experts.
+                        </p>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 shadow-lg">
+                        <img src="https://ih1.redbubble.net/image.4326721277.0235/pp,840x830-pad,1000x1000,f8f8f8.u1.jpg"
+                             alt="Cultural Fest" class="w-full h-32 object-cover rounded-md mb-4">
+                        <h3 class="text-lg font-bold">Cultural Fest: Celebrate Diversity</h3>
+                        <p class="text-gray-600">
+                            Join us for a vibrant celebration of Thapar's rich cultural heritage.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-200 py-6">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center px-4 md:px-6">
+            <p class="text-xs">
+                © 2024 Designed And Developed By Rojit Bhatt
+            </p>
+            <nav class="flex gap-4 mt-4 sm:mt-0">
+                <a href="https://github.com/pratham-poudel" class="text-xl hover:text-gray-400" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="https://www.facebook.com/rojitbhatt" class="text-xl hover:text-gray-400" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="tel:7268921671" class="text-xl hover:text-gray-400">
+                    <i class="fas fa-phone"></i>
+                </a>
+                <a href="https://www.linkedin.com/in/pratham-poudel-4b12632b2/" class="text-xl hover:text-gray-400" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="https://www.instagram.com/prathampoudel/" class="text-xl hover:text-gray-400" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </nav>
+        </div>
+    </footer>
+
+    <script>
+        function closeNotice() {
+            document.getElementById('notice').style.display = 'none';
+        }
+    </script>
+
+</body>
+
+</html>
